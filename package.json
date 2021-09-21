@@ -1,0 +1,20 @@
+{
+  "name": "fa2-token-with-built-in-dex",
+  "version": "1.0.0",
+  "description": "A Tezos FA2 token with a built-in XTZ <-> token exchange",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "watch": "nodemon --exec ligo compile-contract ./contract/main.mligo main"
+  },
+  "keywords": [
+    "Tezos",
+    "token",
+    "DEX"
+  ],
+  "author": "Claude Barde",
+  "license": "ISC",
+  "dependencies": {
+    "nodemon": "^2.0.12"
+  }
+}
