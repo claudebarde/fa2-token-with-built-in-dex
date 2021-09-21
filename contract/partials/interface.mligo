@@ -4,21 +4,25 @@ type token_id = nat
     STORAGE
 *)
 
-type token_metadata =
+type ledger = ((address * token_id), nat) big_map
+
+type token_metadata_val =
 [@layout:comb]
 {
     token_id: token_id;
     token_info: (string, bytes) map;
 }
+type token_metadata = (token_id, token_metadata_val) big_map
 
 type storage =
 {
-    ledger: (address, nat) big_map;
+    ledger: ledger;
     metadata: (string, bytes) big_map;
-    token_metadata: (token_id, token_metadata) big_map;
+    token_metadata: token_metadata;
+    operators: ((address * address), token_id) big_map; // key is user * operator
     xtz_pool: tez;
     token_pool: nat;
-    total_supply: nat; // token total supply
+    total_supply: nat; //  token total supply
     lqt_total: nat;
     admin: address;
 }
