@@ -20,11 +20,11 @@ let apply_transfer (((from, s), transfer): (address * storage) * transfer_to): a
             else
                 let new_ledger: ledger = 
                     Big_map.update (from, token_id) (Some (abs (sender_balance - amt))) s.ledger in
-                // calculates recipient's balance
+                // calculates recipient's balance 
                 let new_ledger: ledger =
-                    match Big_map.find_opt (recipient, token_id) s.ledger with
-                    | None -> Big_map.add (recipient, token_id) amt s.ledger
-                    | Some b -> Big_map.update (recipient, token_id) (Some (b + amt)) s.ledger
+                    match Big_map.find_opt (recipient, token_id) new_ledger with
+                    | None -> Big_map.add (recipient, token_id) amt new_ledger
+                    | Some b -> Big_map.update (recipient, token_id) (Some (b + amt)) new_ledger
                 in
 
                 from, { s with ledger = new_ledger }
