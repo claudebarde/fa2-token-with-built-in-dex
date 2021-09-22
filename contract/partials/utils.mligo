@@ -21,9 +21,9 @@ let token_transfer (storage: storage) (from: address) (to_: address) (token_amou
 [@inline]
 let xtz_transfer (to_ : address) (amount_ : tez) : operation =
     let to_contract : unit contract =
-    match (Tezos.get_contract_opt to_ : unit contract option) with
-    | None -> (failwith error_INVALID_TO_ADDRESS : unit contract)
-    | Some c -> c in
+        match (Tezos.get_contract_opt to_ : unit contract option) with
+        | None -> (failwith error_INVALID_TO_ADDRESS : unit contract)
+        | Some c -> c in
     Tezos.transaction () amount_ to_contract
 
 [@inline]
@@ -33,5 +33,14 @@ let mint_tokens (token_amount: nat) (token_id: nat) (recipient: address) : opera
         | None -> (failwith "NO_MINT_ENTRYPOINT" : mint_params contract)
         | Some contract -> contract in
     let param: mint_params = { recipient = recipient; amount = token_amount; token_id = token_id } in
+    Tezos.transaction param 0mutez token_contract
+
+[@inline]
+let burn_tokens (token_amount: nat) (token_id: nat) (owner: address) : operation =
+    let token_contract: burn_params contract =
+        match (Tezos.get_entrypoint_opt "%burn" Tezos.self_address : burn_params contract option) with
+        | None -> (failwith "NO_BURN_ENTRYPOINT" : burn_params contract)
+        | Some contract -> contract in
+    let param: burn_params = { owner = owner; amount = token_amount; token_id = token_id } in
     Tezos.transaction param 0mutez token_contract
 

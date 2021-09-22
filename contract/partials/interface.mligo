@@ -126,13 +126,26 @@ type add_liquidity =
     deadline: timestamp;
 }
 
+type remove_liquidity =
+[@layout:comb]
+{ 
+    [@annot:to] to_: address ; // recipient of the liquidity redemption
+    lqtBurned : nat;  // amount of lqt owned by sender to burn
+    minXtzWithdrawn: tez ; // minimum amount of tez to withdraw
+    minTokensWithdrawn: nat ; // minimum amount of tokens to whitdw
+    deadline: timestamp ; // the time before which the request must be completed
+}
+
+
 
 type parameter =
 | Transfer of transfer_param list
 | Update_operators of update_operators_param list
 | Balance_of of balance_of_param
 | Mint of mint_params
+| Burn of burn_params
 | Update_whitelisted_minters of address
 | Add_liquidity of add_liquidity
+| Remove_liquidity of remove_liquidity
 
 type return = operation list * storage
