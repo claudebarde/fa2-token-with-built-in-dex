@@ -19,7 +19,7 @@ type storage =
     ledger: ledger;
     metadata: (string, bytes) big_map;
     token_metadata: token_metadata;
-    operators: ((address * address), token_id) big_map; // key is user * operator
+    operators: (((address * address) * token_id), unit) big_map; // key is user * operator
     xtz_pool: tez;
     token_pool: nat;
     total_supply: nat; //  token total supply

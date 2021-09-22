@@ -5,37 +5,29 @@ let apply_transfer (((from, s), transfer): (address * storage) * transfer_to): a
     then (failwith "FA2_TOKEN_UNDEFINED": address * storage)
     else
         // checks is sender is allowed to request a transfer
-        let _ = 
-            if Tezos.sender <> from
-            then
-                match Big_map.find_opt (from, Tezos.sender) s.operators with
-                    | None -> (failwith "FA2_NOT_OPERATOR")
-                    | Some tk_id -> 
-                        if tk_id <> token_id
-                        then (failwith "FA2_NOT_OPERATOR")
-                        else ()
-            else ()
-        in
-        // fetches user's balance
-        let sender_balance: nat =
-            match Big_map.find_opt (from, token_id) s.ledger with
-            | None -> 0n
-            | Some b -> b 
-        in
-        // calculates sender's balance
-        if sender_balance < amt
-        then (failwith "FA2_INSUFFICIENT_BALANCE": address * storage)
+        if Tezos.sender <> from && not Big_map.mem ((from, Tezos.sender), token_id) s.operators
+        then (failwith "FA2_NOT_OPERATOR": address * storage)
         else
-            let new_ledger: ledger = 
-                Big_map.update (from, token_id) (Some (abs (sender_balance - amt))) s.ledger in
-            // calculates recipient's balance
-            let new_ledger: ledger =
-                match Big_map.find_opt (recipient, token_id) s.ledger with
-                | None -> Big_map.add (recipient, token_id) amt s.ledger
-                | Some b -> Big_map.update (recipient, token_id) (Some (b + amt)) s.ledger
+            // fetches user's balance
+            let sender_balance: nat =
+                match Big_map.find_opt (from, token_id) s.ledger with
+                | None -> 0n
+                | Some b -> b 
             in
+            // calculates sender's balance
+            if sender_balance < amt
+            then (failwith "FA2_INSUFFICIENT_BALANCE": address * storage)
+            else
+                let new_ledger: ledger = 
+                    Big_map.update (from, token_id) (Some (abs (sender_balance - amt))) s.ledger in
+                // calculates recipient's balance
+                let new_ledger: ledger =
+                    match Big_map.find_opt (recipient, token_id) s.ledger with
+                    | None -> Big_map.add (recipient, token_id) amt s.ledger
+                    | Some b -> Big_map.update (recipient, token_id) (Some (b + amt)) s.ledger
+                in
 
-            from, { s with ledger = new_ledger }
+                from, { s with ledger = new_ledger }
 
 let process_transfer (s, transfer: storage * transfer_param): storage =
     let { from_ = from; txs = txs } = transfer in
