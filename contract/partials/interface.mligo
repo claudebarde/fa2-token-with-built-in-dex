@@ -19,7 +19,8 @@ type storage =
     ledger: ledger;
     metadata: (string, bytes) big_map;
     token_metadata: token_metadata;
-    operators: (((address * address) * token_id), unit) big_map; // key is user * operator
+    operators: (((address * address) * token_id), unit) big_map; // key is user * operator * token_id
+    whitelisted_minters: (address, unit) big_map;
     xtz_pool: tez;
     token_pool: nat;
     total_supply: nat; //  token total supply
@@ -87,9 +88,35 @@ type balance_of_param =
     callback: (balance_of_callback_param list) contract;
 }
 
+(*
+    MINT PARAMS
+*)
+
+type mint_params =
+[@layout:comb]
+{
+    recipient: address;
+    amount: nat;
+    token_id: token_id;
+}
+
+(*
+    BURN PARAMS
+*)
+
+type burn_params =
+[@layout:comb]
+{
+    owner: address;
+    amount: nat;
+    token_id: token_id;
+}
+
 type parameter =
 | Transfer of transfer_param list
 | Update_operators of update_operators_param list
 | Balance_of of balance_of_param
+| Mint of mint_params
+| Update_whitelisted_minters of address
 
 type return = operation list * storage
