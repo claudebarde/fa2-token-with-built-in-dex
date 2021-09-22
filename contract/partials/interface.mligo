@@ -25,6 +25,7 @@ type storage =
     token_pool: nat;
     total_supply: nat; //  token total supply
     lqt_total: nat;
+    lqt_token_id: nat;
     admin: address;
 }
 
@@ -112,11 +113,26 @@ type burn_params =
     token_id: token_id;
 }
 
+(*
+    LIQUIDITY TYPES
+*)
+
+type add_liquidity =
+[@layout:comb]
+{ 
+    owner: address;
+    minLqtMinted: nat;
+    maxTokensDeposited: nat;
+    deadline: timestamp;
+}
+
+
 type parameter =
 | Transfer of transfer_param list
 | Update_operators of update_operators_param list
 | Balance_of of balance_of_param
 | Mint of mint_params
 | Update_whitelisted_minters of address
+| Add_liquidity of add_liquidity
 
 type return = operation list * storage
