@@ -10,7 +10,13 @@ let ceildiv (numerator : nat) (denominator : nat) : nat =
     | Some v ->  let (q, r) = v in if r = 0n then q else q + 1n
 
 [@inline]
-let token_transfer (storage: storage) (from: address) (to_: address) (token_amount: nat) (token_id: token_id) : operation =
+let fee = 999n
+
+[@inline] 
+let null_address = ("tz1Ke2h7sDdakHJQh8WX4Z372du1KChsksyU" : address)
+
+[@inline]
+let token_transfer (from: address) (to_: address) (token_amount: nat) (token_id: token_id) : operation =
     let token_contract: (transfer_param list) contract =
         match (Tezos.get_entrypoint_opt "%transfer" Tezos.self_address : (transfer_param list) contract option) with
         | None -> (failwith error_TOKEN_CONTRACT_MUST_HAVE_A_TRANSFER_ENTRYPOINT : (transfer_param list) contract)

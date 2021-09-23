@@ -9,24 +9,24 @@ type ledger = ((address * token_id), nat) big_map
 type token_metadata_val =
 [@layout:comb]
 {
-    token_id: token_id;
-    token_info: (string, bytes) map;
+    token_id    : token_id;
+    token_info  : (string, bytes) map;
 }
 type token_metadata = (token_id, token_metadata_val) big_map
 
 type storage =
 {
-    ledger: ledger;
-    metadata: (string, bytes) big_map;
-    token_metadata: token_metadata;
-    operators: (((address * address) * token_id), unit) big_map; // key is user * operator * token_id
-    whitelisted_minters: (address, unit) big_map;
-    xtz_pool: tez;
-    token_pool: nat;
-    total_supply: nat; //  token total supply
-    lqt_total: nat;
-    lqt_token_id: nat;
-    admin: address;
+    ledger              : ledger;
+    metadata            : (string, bytes) big_map;
+    token_metadata      : token_metadata;
+    operators           : (((address * address) * token_id), unit) big_map; // key is user * operator * token_id
+    whitelisted_minters : (address, unit) big_map;
+    xtz_pool            : tez;
+    token_pool          : nat;
+    total_supply        : nat; //  token total supply
+    lqt_total           : nat;
+    lqt_token_id        : nat;
+    admin               : address;
 }
 
 (*
@@ -36,16 +36,16 @@ type storage =
 type transfer_to =
 [@layout:comb]
 {
-    to_: address;
+    to_     : address;
     token_id: token_id;
-    amount: nat;
+    amount  : nat;
 }
 
 type transfer_param = 
 [@layout:comb]
 {
-    from_: address;
-    txs: transfer_to list
+    from_   : address;
+    txs     : transfer_to list
 }
 
 (*
@@ -55,7 +55,7 @@ type transfer_param =
 type action_operator_param =
 [@layout:comb]
 {
-    owner: address;
+    owner   : address;
     operator: address;
     token_id: token_id
 }
@@ -71,7 +71,7 @@ type update_operators_param =
 type balance_of_request =
 [@layout:comb]
 {
-    owner: address;
+    owner   : address;
     token_id: token_id;
 }
 
@@ -96,9 +96,9 @@ type balance_of_param =
 type mint_params =
 [@layout:comb]
 {
-    recipient: address;
-    amount: nat;
-    token_id: token_id;
+    recipient   : address;
+    amount      : nat;
+    token_id    : token_id;
 }
 
 (*
@@ -108,9 +108,9 @@ type mint_params =
 type burn_params =
 [@layout:comb]
 {
-    owner: address;
-    amount: nat;
-    token_id: token_id;
+    owner       : address;
+    amount      : nat;
+    token_id    : token_id;
 }
 
 (*
@@ -120,32 +120,50 @@ type burn_params =
 type add_liquidity =
 [@layout:comb]
 { 
-    owner: address;
-    minLqtMinted: nat;
-    maxTokensDeposited: nat;
-    deadline: timestamp;
+    owner               : address;
+    minLqtMinted        : nat;
+    maxTokensDeposited  : nat;
+    deadline            : timestamp;
 }
 
 type remove_liquidity =
 [@layout:comb]
 { 
-    [@annot:to] to_: address ; // recipient of the liquidity redemption
-    lqtBurned : nat;  // amount of lqt owned by sender to burn
-    minXtzWithdrawn: tez ; // minimum amount of tez to withdraw
-    minTokensWithdrawn: nat ; // minimum amount of tokens to whitdw
-    deadline: timestamp ; // the time before which the request must be completed
+    [@annot:to] to_     : address ; // recipient of the liquidity redemption
+    lqtBurned           : nat;  // amount of lqt owned by sender to burn
+    minXtzWithdrawn     : tez ; // minimum amount of tez to withdraw
+    minTokensWithdrawn  : nat ; // minimum amount of tokens to whitdw
+    deadline            : timestamp ; // the time before which the request must be completed
 }
 
+type xtz_to_token =
+[@layout:comb]
+{ 
+    [@annot:to] to_ : address ;
+    minTokensBought : nat ;
+    deadline        : timestamp ;
+}
 
+type token_to_xtz =
+[@layout:comb]
+{ 
+    [@annot:to] to_ : address ;
+    tokensSold      : nat ;
+    minXtzBought    : tez ;
+    deadline        : timestamp ;
+}
 
 type parameter =
-| Transfer of transfer_param list
-| Update_operators of update_operators_param list
-| Balance_of of balance_of_param
-| Mint of mint_params
-| Burn of burn_params
-| Update_whitelisted_minters of address
-| Add_liquidity of add_liquidity
-| Remove_liquidity of remove_liquidity
+| Transfer                      of transfer_param list
+| Update_operators              of update_operators_param list
+| Balance_of                    of balance_of_param
+| Mint                          of mint_params
+| Burn                          of burn_params
+| Update_whitelisted_minters    of address
+| Add_liquidity                 of add_liquidity
+| Remove_liquidity              of remove_liquidity
+| Xtz_to_token                  of xtz_to_token
+| Token_to_xtz                  of token_to_xtz
+| Default                       of unit
 
 type return = operation list * storage

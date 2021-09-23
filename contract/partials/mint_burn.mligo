@@ -8,8 +8,8 @@ let mint (p, s: mint_params * storage): storage =
         let new_ledger: ledger =
             match Big_map.find_opt (recipient, token_id) s.ledger with
             | None -> Big_map.add (recipient, token_id) amt s.ledger
-            |Some b -> Big_map.update (recipient, token_id) (Some (b + amt)) s.ledger
-        in { s with ledger = new_ledger }
+            | Some b -> Big_map.update (recipient, token_id) (Some (b + amt)) s.ledger
+        in { s with ledger = new_ledger; total_supply = s.total_supply + amt }
 
 let burn (p, s: burn_params * storage): storage =
     if Tezos.sender <> s.admin

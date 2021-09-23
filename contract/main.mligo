@@ -10,11 +10,14 @@
    
 let main (action, s: parameter * storage): return =
     match action with
-    | Transfer p -> ([]: operation list), transfer (p, s)
-    | Update_operators p -> ([]: operation list), update_operators (p, s)
-    | Balance_of p -> balance_of (p, s)
-    | Mint p -> ([]: operation list), mint (p, s)
-    | Burn p -> ([]: operation list), burn (p, s)
-    | Update_whitelisted_minters p -> ([]: operation list), update_whitelisted_minters (p, s)
-    | Add_liquidity p -> add_liquidity (p, s)
-    | Remove_liquidity p -> remove_liquidity (p, s)
+    | Transfer p                    -> ([]: operation list), transfer (p, s)
+    | Update_operators p            -> ([]: operation list), update_operators (p, s)
+    | Balance_of p                  -> balance_of (p, s)
+    | Mint p                        -> ([]: operation list), mint (p, s)
+    | Burn p                        -> ([]: operation list), burn (p, s)
+    | Update_whitelisted_minters p  -> ([]: operation list), update_whitelisted_minters (p, s)
+    | Add_liquidity p               -> add_liquidity (p, s)
+    | Remove_liquidity p            -> remove_liquidity (p, s)
+    | Xtz_to_token p                -> xtz_to_token (p, s)
+    | Token_to_xtz p                -> token_to_xtz (p, s)
+    | Default                       -> ([]: operation list), default_ s
