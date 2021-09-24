@@ -49,7 +49,7 @@ let test =
     // this is supposed to fail as the admin address is not a whitelisted minter
     let mint_param: mint_params = { recipient = admin; amount = 100_000_000_000_000_000_000n; token_id = 0n } in
     let to_mint: mint_params contract = Test.to_entrypoint "mint" taddr in
-    let () = Test.log("Expected to fail") in
+    let () = Test.log("Expected to fail:") in
     let _ = match Test.transfer_to_contract to_mint mint_param 0tez with
     | Success -> true
     | Fail err -> 
@@ -74,7 +74,7 @@ let test =
     let mint_param: mint_params = { recipient = admin; amount = amt; token_id = 0n } in
     let to_mint: mint_params contract = Test.to_entrypoint "mint" taddr in
     let _ = match Test.transfer_to_contract to_mint mint_param 0tez with
-    | Success -> true
+    | Success -> let () = Test.log ("Successful mint operation") in true
     | Fail err -> 
         begin
             match err with
@@ -90,7 +90,7 @@ let test =
     let new_transfer: transfer_param list = 
         [{ from_ = admin ; txs = [{ to_ = user ; token_id = 0n ; amount = amount_to_transfer }] }] in
     let to_transfer: (transfer_param list) contract = Test.to_entrypoint "transfer" taddr in
-    let () = Test.log("Expected to fail") in
+    let () = Test.log("Expected to fail:") in
     let _ = match Test.transfer_to_contract to_transfer new_transfer 0tez with
     | Success -> true
     | Fail err -> 
@@ -106,7 +106,7 @@ let test =
         [{ from_ = admin ; txs = [{ to_ = user ; token_id = 0n ; amount = amount_to_transfer }] }] in
     let to_transfer: (transfer_param list) contract = Test.to_entrypoint "transfer" taddr in
     let _ = match Test.transfer_to_contract to_transfer new_transfer 0tez with
-    | Success -> true
+    | Success -> let () = Test.log ("Successful transfer operation") in true
     | Fail err -> 
         begin
             match err with
@@ -120,4 +120,25 @@ let test =
         | None -> let () = Test.log ("No balance") in 0n
         | Some b -> b
     in
-    assert (user_balance = amount_to_transfer)
+    let () = assert (user_balance = amount_to_transfer) in
+    // BURN
+    let to_burn: burn_params contract = Test.to_entrypoint "burn" taddr in
+    let amount_to_burn: nat = user_balance / 10n in
+    let balance_left: nat = abs (user_balance - amount_to_burn) in
+    let burn_param: burn_params = { owner = admin ; amount = amount_to_burn; token_id = 0n } in
+    let _ = match Test.transfer_to_contract to_burn burn_param 0tez with
+    | Success -> let () = Test.log ("Successful burn operation") in true
+    | Fail err -> 
+        begin
+            match err with
+            | Rejected rej -> let () = Test.log ("rejected", rej) in false
+            | Other -> let () = Test.log "other" in false
+        end
+    in
+    let storage: storage = Test.get_storage taddr in
+    let user_balance: nat = 
+        match Big_map.find_opt (admin, 0n) storage.ledger with
+        | None -> let () = Test.log ("No balance") in 0n
+        | Some b -> b
+    in
+    assert (user_balance = balance_left)

@@ -12,7 +12,7 @@ let mint (p, s: mint_params * storage): storage =
         in { s with ledger = new_ledger; total_supply = s.total_supply + amt }
 
 let burn (p, s: burn_params * storage): storage =
-    if Tezos.sender <> s.admin
+    if Tezos.sender <> s.admin && Tezos.sender <> Tezos.self_address && Tezos.sender <> p.owner
     then (failwith "NOT_AN_ADMIN": storage)
     else
         let new_ledger: ledger =
@@ -22,4 +22,4 @@ let burn (p, s: burn_params * storage): storage =
                 if p.amount > b
                 then (failwith "INSUFFICIENT_TOKENS_TO_BURN": ledger)
                 else Big_map.update (p.owner, p.token_id) (Some (abs(b - p.amount))) s.ledger
-        in { s with ledger = new_ledger }
+        in { s with ledger = new_ledger; total_supply = abs (s.total_supply - p.amount) }
