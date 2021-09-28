@@ -29,25 +29,45 @@ let test =
 
     let initial_storage = 
     {
-        ledger              = (Big_map.empty: ledger);
+        ledger              = (Big_map.literal [((admin, 0n), 1_000_000n)]: ledger);
         metadata            = (Big_map.empty: (string, bytes) big_map);
-        token_metadata      = (Big_map.literal [(0n, { token_id = 0n; token_info = (Map.empty: (string, bytes) map) })]: token_metadata);
+        token_metadata      = (Big_map.literal [
+                                        (0n, { token_id = 0n; token_info = (Map.empty: (string, bytes) map) });
+                                        (1n, { token_id = 1n; token_info = (Map.empty: (string, bytes) map) })
+                                    ]: token_metadata);
         operators           = (Big_map.empty: (((address * address) * token_id), unit) big_map);
         whitelisted_minters = (Big_map.empty: (address, unit) big_map);
-        xtz_pool            = 0tez;
-        token_pool          = 0n;
-        total_supply        = 0n;
-        lqt_total           = 0n;
+        xtz_pool            = 1tez;
+        token_pool          = 1_000_000n;
+        total_supply        = 1_000_000n;
+        lqt_total           = 1_000_000n;
         lqt_token_id        = 1n;
         admin               = admin;
     } in
-    let (taddr, _, _) = Test.originate main initial_storage 0tez in
+    let (taddr, _, _) = Test.originate main initial_storage 1tez in
     let storage: storage = Test.get_storage taddr in
+    let initial_total_supply = storage.total_supply in
     // checks that the contract has been originated properly
-    let () = assert (storage.xtz_pool = 0tez) in
+    let () = assert (storage.xtz_pool = 1tez) in
+    // sets the contract address as an operator for the user
+    let approve_param: update_operators_param list = [
+            (Add_operator { owner = admin; operator = (Tezos.address (Test.to_contract taddr)); token_id = 0n });
+            (Add_operator { owner = admin; operator = (Tezos.address (Test.to_contract taddr)); token_id = 1n })
+        ] in
+    let to_approve: (update_operators_param list) contract = Test.to_entrypoint "update_operators" taddr in
+    let approved = match Test.transfer_to_contract to_approve approve_param 0tez with
+    | Success -> true
+    | Fail err -> 
+        begin
+            match err with
+            | Rejected rej -> let () = Test.log ("rejected", rej) in false
+            | Other -> let () = Test.log "other" in false
+        end
+    in
+    let () = assert (approved = true) in
     // MINT entrypoint
     // this is supposed to fail as the admin address is not a whitelisted minter
-    let mint_param: mint_params = { recipient = admin; amount = 100_000_000_000_000_000_000n; token_id = 0n } in
+    let mint_param: mint_params = { recipient = admin; amount = 1_000_000n; token_id = 0n } in
     let to_mint: mint_params contract = Test.to_entrypoint "mint" taddr in
     let () = Test.log("Expected to fail:") in
     let _ = match Test.transfer_to_contract to_mint mint_param 0tez with
@@ -70,7 +90,7 @@ let test =
             | Other -> let () = Test.log "other" in false
         end
     in
-    let amt = 100_000_000_000_000_000_000n in
+    let amt = 1_000_000n in
     let mint_param: mint_params = { recipient = admin; amount = amt; token_id = 0n } in
     let to_mint: mint_params contract = Test.to_entrypoint "mint" taddr in
     let _ = match Test.transfer_to_contract to_mint mint_param 0tez with
@@ -83,7 +103,7 @@ let test =
         end
     in
     let storage: storage = Test.get_storage taddr in
-    let () = assert (storage.total_supply = amt) in
+    let () = assert (storage.total_supply = initial_total_supply + amt) in
     // TRANSFER
     // this will fail because of insufficient balance
     let amount_to_transfer = storage.total_supply + 1n in
@@ -126,6 +146,11 @@ let test =
     let amount_to_burn: nat = user_balance / 10n in
     let balance_left: nat = abs (user_balance - amount_to_burn) in
     let burn_param: burn_params = { owner = admin ; amount = amount_to_burn; token_id = 0n } in
+    let admin_balance: nat = 
+        match Big_map.find_opt (admin, 0n) storage.ledger with
+        | None -> let () = Test.log ("No balance") in 0n
+        | Some b -> b
+    in
     let _ = match Test.transfer_to_contract to_burn burn_param 0tez with
     | Success -> let () = Test.log ("Successful burn operation") in true
     | Fail err -> 
@@ -141,4 +166,22 @@ let test =
         | None -> let () = Test.log ("No balance") in 0n
         | Some b -> b
     in
-    assert (user_balance = balance_left)
+    let () = assert (user_balance = balance_left) in
+    // ADD LIQUIDITY
+    let minLqtMinted = 1_000_000n in
+    let maxTokensDeposited = 1_000_000n in
+    let liquidity_param: add_liquidity = 
+        { owner = admin; minLqtMinted = minLqtMinted; maxTokensDeposited = maxTokensDeposited; deadline = ("2021-09-28T11:59:24.348Z": timestamp) } in
+    let to_add_liquidity: add_liquidity contract = Test.to_entrypoint "add_liquidity" taddr in
+    let _ = match Test.transfer_to_contract to_add_liquidity liquidity_param 1tez with
+    | Success -> let () = Test.log ("Successful add liquidity operation") in true
+    | Fail err -> 
+        begin
+            match err with
+            | Rejected rej -> let () = Test.log ("rejected", rej) in false
+            | Other -> let () = Test.log "other" in false
+        end
+    in
+    let storage: storage = Test.get_storage taddr in
+    // let _ = Test.log storage in
+    assert (storage.xtz_pool = 2tez)
