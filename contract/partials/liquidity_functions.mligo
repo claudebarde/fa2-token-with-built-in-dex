@@ -25,7 +25,7 @@ let add_liquidity (p, s: add_liquidity * storage): return =
                 xtz_pool   = s.xtz_pool + Tezos.amount } in
 
             // send tokens from sender to exchange
-            let op_token = token_transfer Tezos.sender Tezos.self_address tokens_deposited s.lqt_token_id in
+            let op_token = token_transfer owner Tezos.self_address tokens_deposited 0n in
             // mint lqt tokens for them
             let op_lqt = mint_tokens lqt_minted s.lqt_token_id owner in
 

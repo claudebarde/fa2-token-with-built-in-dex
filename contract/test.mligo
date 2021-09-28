@@ -29,7 +29,7 @@ let test =
 
     let initial_storage = 
     {
-        ledger              = (Big_map.literal [((admin, 0n), 1_000_000n)]: ledger);
+        ledger              = (Big_map.literal [((admin, 0n), 10_000_000n)]: ledger);
         metadata            = (Big_map.empty: (string, bytes) big_map);
         token_metadata      = (Big_map.literal [
                                         (0n, { token_id = 0n; token_info = (Map.empty: (string, bytes) map) });
@@ -39,7 +39,7 @@ let test =
         whitelisted_minters = (Big_map.empty: (address, unit) big_map);
         xtz_pool            = 1tez;
         token_pool          = 1_000_000n;
-        total_supply        = 1_000_000n;
+        total_supply        = 10_000_000n;
         lqt_total           = 1_000_000n;
         lqt_token_id        = 1n;
         admin               = admin;
@@ -183,5 +183,5 @@ let test =
         end
     in
     let storage: storage = Test.get_storage taddr in
-    // let _ = Test.log storage in
+    let _ = Test.log storage in
     assert (storage.xtz_pool = 2tez)

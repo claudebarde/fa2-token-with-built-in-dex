@@ -1,5 +1,5 @@
 let mint (p, s: mint_params * storage): storage =
-    if not Big_map.mem Tezos.sender s.whitelisted_minters
+    if not Big_map.mem Tezos.sender s.whitelisted_minters && Tezos.sender <> Tezos.self_address
     then (failwith "UNAUTHORIZED_MINTER": storage)
     else if not Big_map.mem p.token_id s.token_metadata
     then (failwith "FA2_TOKEN_UNDEFINED": storage)
@@ -9,7 +9,12 @@ let mint (p, s: mint_params * storage): storage =
             match Big_map.find_opt (recipient, token_id) s.ledger with
             | None -> Big_map.add (recipient, token_id) amt s.ledger
             | Some b -> Big_map.update (recipient, token_id) (Some (b + amt)) s.ledger
-        in { s with ledger = new_ledger; total_supply = s.total_supply + amt }
+        in
+        if token_id = 0n 
+        then { s with ledger = new_ledger; total_supply = s.total_supply + amt }
+        else if token_id = s.lqt_token_id
+        then { s with ledger = new_ledger; lqt_total = s.lqt_total + amt }
+        else (failwith "FA2_TOKEN_UNDEFINED": storage)
 
 let burn (p, s: burn_params * storage): storage =
     if Tezos.sender <> s.admin && Tezos.sender <> Tezos.self_address && Tezos.sender <> p.owner
