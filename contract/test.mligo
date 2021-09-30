@@ -234,9 +234,8 @@ let test =
             end
     in
     let storage: storage = Test.get_storage taddr in
-    let _ = Test.log storage in
     let admin_new_tez_balance = Test.get_balance admin in
-    // assert ((mutez_to_natural admin_new_tez_balance) >= (mutez_to_natural (admin_initial_tez_balance + minXtzWithdrawn)))
+    let _ = assert ((mutez_to_natural admin_new_tez_balance) >= ((mutez_to_natural admin_initial_tez_balance) + (mutez_to_natural minXtzWithdrawn))) in
     let _ = assert (storage.token_pool <= abs (initial_storage.token_pool - minTokensWithdrawn)) in
     let _ = assert (storage.lqt_total = abs (initial_storage.lqt_total - lqtBurned)) in
     // assert (storage.xtz_pool <= (initial_storage.xtz_pool - minXtzWithdrawn))
@@ -245,5 +244,5 @@ let test =
         match Big_map.find_opt (admin, storage.lqt_token_id) storage.ledger with
         | None -> let () = Test.log ("No balance") in 0n
         | Some b -> b in
-    let _ = Test.log (admin_balance, admin_initial_balance + minTokensWithdrawn) in
+    // let _ = Test.log (admin_balance, admin_initial_balance + minTokensWithdrawn) in
     assert (admin_balance >= admin_initial_balance + minTokensWithdrawn)
