@@ -10,11 +10,11 @@ let mint (p, s: mint_params * storage): storage =
             | None -> Big_map.add (recipient, token_id) amt s.ledger
             | Some b -> Big_map.update (recipient, token_id) (Some (b + amt)) s.ledger
         in
-        if token_id = 0n 
-        then { s with ledger = new_ledger; total_supply = s.total_supply + amt }
-        else if token_id = s.lqt_token_id
-        then { s with ledger = new_ledger; lqt_total = s.lqt_total + amt }
-        else (failwith "FA2_TOKEN_UNDEFINED": storage)
+        { 
+            s with 
+                ledger = new_ledger; 
+                total_supply = if token_id = 0n then s.total_supply + amt else s.total_supply 
+        }
 
 let burn (p, s: burn_params * storage): storage =
     if Tezos.sender <> s.admin && Tezos.sender <> Tezos.self_address && Tezos.sender <> p.owner
@@ -27,4 +27,4 @@ let burn (p, s: burn_params * storage): storage =
                 if p.amount > b
                 then (failwith "INSUFFICIENT_TOKENS_TO_BURN": ledger)
                 else Big_map.update (p.owner, p.token_id) (Some (abs(b - p.amount))) s.ledger
-        in { s with ledger = new_ledger; total_supply = abs (s.total_supply - p.amount) }
+        in { s with ledger = new_ledger; total_supply = if p.token_id = 0n then abs (s.total_supply - p.amount) else s.total_supply }

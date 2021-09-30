@@ -69,7 +69,7 @@ let remove_liquidity (p, s: remove_liquidity * storage): return =
                     | Some n -> n in
                                     
                 let op_lqt = burn_tokens lqtBurned s.lqt_token_id Tezos.sender in
-                let op_token = token_transfer Tezos.self_address to_ tokens_withdrawn s.lqt_token_id in
+                let op_token = token_transfer Tezos.self_address to_ tokens_withdrawn 0n in
                 let op_xtz = xtz_transfer to_ xtz_withdrawn in
                 let new_storage = { s with xtz_pool = s.xtz_pool - xtz_withdrawn ; lqt_total = new_lqt_total ; token_pool = new_token_pool } in
                 ([op_lqt; op_token; op_xtz], new_storage)
