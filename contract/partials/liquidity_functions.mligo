@@ -71,7 +71,13 @@ let remove_liquidity (p, s: remove_liquidity * storage): return =
                 let op_lqt = burn_tokens lqtBurned s.lqt_token_id Tezos.sender in
                 let op_token = token_transfer Tezos.self_address to_ tokens_withdrawn 0n in
                 let op_xtz = xtz_transfer to_ xtz_withdrawn in
-                let new_storage = { s with xtz_pool = s.xtz_pool - xtz_withdrawn ; lqt_total = new_lqt_total ; token_pool = new_token_pool } in
+                let new_storage = 
+                    { 
+                        s with 
+                            xtz_pool = s.xtz_pool - xtz_withdrawn ; 
+                            lqt_total = new_lqt_total ; 
+                            token_pool = new_token_pool 
+                    } in
                 ([op_lqt; op_token; op_xtz], new_storage)
             end
     end
@@ -109,7 +115,7 @@ let xtz_to_token (p, s: xtz_to_token * storage) =
                         token_pool = new_token_pool } in
         // send tokens_withdrawn to to address
         // if tokens_bought is greater than storage.tokenPool, this will fail
-        let op = token_transfer Tezos.self_address to_ tokens_bought s.lqt_token_id in
+        let op = token_transfer Tezos.self_address to_ tokens_bought 0n in
         let op_burn = xtz_transfer null_address (natural_to_mutez burn_amount) in
 	([ op ; op_burn], new_storage)
     end
@@ -135,7 +141,7 @@ let token_to_xtz (p, s: token_to_xtz * storage) =
             then (failwith error_XTZ_BOUGHT_MUST_BE_GREATER_THAN_OR_EQUAL_TO_MIN_XTZ_BOUGHT : tez) 
             else bought in
 
-        let op_token = token_transfer Tezos.sender Tezos.self_address tokensSold s.lqt_token_id in
+        let op_token = token_transfer Tezos.sender Tezos.self_address tokensSold 0n in
         let op_tez = xtz_transfer to_ xtz_bought_net_burn in
         let storage = { s with token_pool = s.token_pool + tokensSold ;
                                     xtz_pool = s.xtz_pool - xtz_bought } in

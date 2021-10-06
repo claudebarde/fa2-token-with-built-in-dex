@@ -27,4 +27,8 @@ let burn (p, s: burn_params * storage): storage =
                 if p.amount > b
                 then (failwith "INSUFFICIENT_TOKENS_TO_BURN": ledger)
                 else Big_map.update (p.owner, p.token_id) (Some (abs(b - p.amount))) s.ledger
-        in { s with ledger = new_ledger; total_supply = if p.token_id = 0n then abs (s.total_supply - p.amount) else s.total_supply }
+        in { 
+                s with 
+                    ledger = new_ledger; 
+                    total_supply = if p.token_id = 0n then abs (s.total_supply - p.amount) else s.total_supply 
+            }

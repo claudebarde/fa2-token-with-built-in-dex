@@ -7,6 +7,7 @@
 #include "./partials/admin.mligo"
 #include "./partials/mint_burn.mligo"
 #include "./partials/liquidity_functions.mligo"
+#include "./test-lib.mligo"
    
 let main (action, s: parameter * storage): return =
     match action with
@@ -49,7 +50,7 @@ let test =
     let storage: storage = Test.get_storage taddr in
     let initial_total_supply = storage.total_supply in
     // checks that the contract has been originated properly
-    let () = assert (storage.xtz_pool = 1tez) in
+    let () = is_equal (Tez (storage.xtz_pool, 1tez)) in
     // sets the contract address as an operator for the user
     let approve_param: update_operators_param list = [
             (Add_operator { owner = admin; operator = contract_address; token_id = 0n });
@@ -106,7 +107,7 @@ let test =
             end
     in
     let storage: storage = Test.get_storage taddr in
-    let () = assert (storage.total_supply = initial_total_supply + amt) in
+    let () = is_equal (Nat (storage.total_supply, (initial_total_supply + amt))) in
     // TRANSFER
     let () = Test.log("---------- Testing transfer entrypoint ----------") in
     // this will fail because of insufficient balance
@@ -139,20 +140,12 @@ let test =
             end
     in
     let storage: storage = Test.get_storage taddr in
-    let user_balance: nat = 
-        match Big_map.find_opt (user, 0n) storage.ledger with
-        | None -> let () = Test.log ("No balance") in 0n
-        | Some b -> b
-    in
-    let () = assert (user_balance = amount_to_transfer) in
+    let user_balance: nat = fetch_balance user 0n storage.ledger in
+    let () = is_equal (Nat (user_balance, amount_to_transfer)) in
     // BURN
     let () = Test.log("---------- Testing burn entrypoint ----------") in
     let to_burn: burn_params contract = Test.to_entrypoint "burn" taddr in
-    let admin_balance: nat = 
-        match Big_map.find_opt (admin, 0n) storage.ledger with
-        | None -> let () = Test.log ("No balance") in 0n
-        | Some b -> b
-    in
+    let admin_balance: nat = fetch_balance admin 0n storage.ledger in
     let amount_to_burn: nat = admin_balance / 10n in
     let balance_left: nat = abs (admin_balance - amount_to_burn) in
     let burn_param: burn_params = { owner = admin ; amount = amount_to_burn; token_id = 0n } in
@@ -166,12 +159,8 @@ let test =
             end
     in
     let storage: storage = Test.get_storage taddr in
-    let admin_balance: nat = 
-        match Big_map.find_opt (admin, 0n) storage.ledger with
-        | None -> let () = Test.log ("No balance") in 0n
-        | Some b -> b
-    in
-    let () = assert (admin_balance = balance_left) in
+    let admin_balance: nat = fetch_balance admin 0n storage.ledger in
+    let () = is_equal (Nat (admin_balance, balance_left)) in
     // ADD LIQUIDITY
     let () = Test.log("---------- Testing add_liquidity entrypoint ----------") in
     let minLqtMinted = 100_000n in
@@ -189,29 +178,23 @@ let test =
             end
     in
     let storage: storage = Test.get_storage taddr in
-    let _ = assert (storage.xtz_pool = 1_100_000mutez) in
+    let _ = is_equal (Tez (storage.xtz_pool, 1_100_000mutez)) in
     // checks contract balance
-    let contract_balance = 
-        match Big_map.find_opt (contract_address, 0n) storage.ledger with
-        | None -> let () = Test.log ("No balance") in 0n
-        | Some b -> b in
-    let _ = assert (contract_balance <= maxTokensDeposited) in
+    let contract_balance = fetch_balance contract_address 0n storage.ledger in
+    let _ = is_less_or_equal (Nat (contract_balance, maxTokensDeposited)) in
     // REMOVE LIQUIDITY
     let () = Test.log("---------- Testing remove_liquidity entrypoint ----------") in
     let admin_initial_tez_balance = Test.get_balance admin in
     // fetches admin's balance
-    let admin_balance = 
-        match Big_map.find_opt (admin, storage.lqt_token_id) storage.ledger with
-        | None -> let () = Test.log ("No balance") in 0n
-        | Some b -> b in
-    let () = assert (admin_balance > 0n) in
+    let admin_balance = fetch_balance admin storage.lqt_token_id storage.ledger in
+    let _ = is_greater (Nat (admin_balance, 0n)) in
     // builts parameter
     // xtz_withdrawn = ((lqtBurned * (mutez_to_natural s.xtz_pool)) / s.lqt_total)
     // xtz_withdrawn = ((1000000n * (2000000n)) / 2000000n)
     // tokens_withdrawn = lqtBurned * s.token_pool /  s.lqt_total
     // tokens_withdrawn = 1000000n * 2000000n / 2000000n
     let initial_storage = storage in
-    let admin_initial_balance = admin_balance in
+    let admin_lqt_initial_balance = admin_balance in
     let minXtzWithdrawn = 100_000mutez in
     let minTokensWithdrawn = 100_000n in
     let lqtBurned = 100_000n in
@@ -235,14 +218,16 @@ let test =
     in
     let storage: storage = Test.get_storage taddr in
     let admin_new_tez_balance = Test.get_balance admin in
-    let _ = assert ((mutez_to_natural admin_new_tez_balance) >= ((mutez_to_natural admin_initial_tez_balance) + (mutez_to_natural minXtzWithdrawn))) in
+    Test.log (admin_new_tez_balance, (admin_initial_tez_balance, minXtzWithdrawn))
+    // is_greater_or_equal (Tez (admin_new_tez_balance, (admin_initial_tez_balance + minXtzWithdrawn)))
+    (*
     let _ = assert (storage.token_pool <= abs (initial_storage.token_pool - minTokensWithdrawn)) in
     let _ = assert (storage.lqt_total = abs (initial_storage.lqt_total - lqtBurned)) in
-    // assert (storage.xtz_pool <= (initial_storage.xtz_pool - minXtzWithdrawn))
     // fetches admin's balance
-    let admin_balance = 
+    let admin_lqt_balance = 
         match Big_map.find_opt (admin, storage.lqt_token_id) storage.ledger with
         | None -> let () = Test.log ("No balance") in 0n
         | Some b -> b in
-    // let _ = Test.log (admin_balance, admin_initial_balance + minTokensWithdrawn) in
-    assert (admin_balance >= admin_initial_balance + minTokensWithdrawn)
+    let _ = Test.log (admin_lqt_balance, (admin_lqt_initial_balance, minTokensWithdrawn)) in
+    assert (admin_lqt_balance >= abs (admin_lqt_initial_balance - minTokensWithdrawn))     
+    *)
