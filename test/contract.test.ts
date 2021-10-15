@@ -56,8 +56,6 @@ describe("Setting up", () => {
     expect(balance.toNumber()).toBeGreaterThan(0);
   });
   test("Contract must be originated", async () => {
-    jest.setTimeout(30000);
-
     const originationOp = await Tezos.contract.originate({
       code: contractCode,
       storage: initialStorage
@@ -158,6 +156,35 @@ describe("Transfers", () => {
         .send()
     ).rejects.toMatchObject({ message: "FA2_INSUFFICIENT_BALANCE" });
   });
+
+  test("Should prevent transfer of unknown token id", async () => {
+    const contract = await Tezos.contract.at(contractAddress);
+    expect(
+      contract.methods
+        .transfer([
+          {
+            from_: alice.pk,
+            txs: [{ to_: bob.pk, token_id: 2, amount: 10 }]
+          }
+        ])
+        .send()
+    ).rejects.toMatchObject({ message: "FA2_TOKEN_UNDEFINED" });
+  });
+
+  test("Should prevent Alice from transferring Bob's tokens", async () => {
+    const contract = await Tezos.contract.at(contractAddress);
+    expect(
+      contract.methods
+        .transfer([
+          {
+            from_: bob.pk,
+            txs: [{ to_: alice.pk, token_id: 0, amount: 10 }]
+          }
+        ])
+        .send()
+    ).rejects.toMatchObject({ message: "FA2_NOT_OPERATOR" });
+  });
+
   test("Should let Alice transfer tokens to Bob", async () => {
     const contract = await Tezos.contract.at(contractAddress);
     const storage: any = await contract.storage();
@@ -194,5 +221,54 @@ describe("Transfers", () => {
       1: nativeTokenId
     });
     expect(bobNewBalance.toNumber()).toEqual(amountToTransfer);
+  });
+});
+
+describe("Minting of tokens", () => {
+  const tokensToMint = 1_000_000;
+
+  test("Minting fails", async () => {
+    const contract = await Tezos.contract.at(contractAddress);
+    // this fails as Alice's address is not set as a minter
+    expect(
+      contract.methods.mint(alice.pk, 1_000_000, 0).send()
+    ).rejects.toMatchObject({ message: "UNAUTHORIZED_MINTER" });
+    // sets Alice's address as a minter
+    const storage: any = await contract.storage();
+    const whitelistedAlice = await storage.whitelisted_minters.get(alice.pk);
+    expect(whitelistedAlice).toBeUndefined();
+    const newMinterOp = await contract.methods
+      .update_whitelisted_minters(alice.pk)
+      .send();
+    await newMinterOp.confirmation();
+    expect(newMinterOp.hash).toBeTruthy();
+    expect(newMinterOp.status).toEqual("applied");
+    // token minting with unknown token id
+    expect(
+      contract.methods.mint(alice.pk, tokensToMint, 2).send()
+    ).rejects.toMatchObject({ message: "FA2_TOKEN_UNDEFINED" });
+  });
+
+  test("Should mint tokens for Alice", async () => {
+    const contract = await Tezos.contract.at(contractAddress);
+    // sets Alice's address as a minter
+    const storage: any = await contract.storage();
+    const initialTokenTotalSupply = storage.total_supply.toNumber();
+    const aliceInitialBalance = await storage.ledger.get({ 0: alice.pk, 1: 0 });
+    const mintingOp = await contract.methods
+      .mint(alice.pk, tokensToMint, 0)
+      .send();
+    await mintingOp.confirmation();
+    expect(mintingOp.hash).toBeTruthy();
+    expect(mintingOp.status).toEqual("applied");
+    // checks that total supply has been incremented accordingly
+    const newStorage: any = await contract.storage();
+    const newTokenTotalSupply = newStorage.total_supply.toNumber();
+    expect(newTokenTotalSupply).toEqual(initialTokenTotalSupply + tokensToMint);
+    // checks that Alice's account has been incremented accordingly
+    const aliceNewBalance = await newStorage.ledger.get({ 0: alice.pk, 1: 0 });
+    expect(aliceNewBalance.toNumber()).toEqual(
+      aliceInitialBalance.toNumber() + tokensToMint
+    );
   });
 });

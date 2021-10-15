@@ -7,8 +7,9 @@
     "watch": "nodemon --exec ligo compile-contract ./contract/main.mligo main",
     "watch-test": "nodemon --exec ligo test ./contract/test.mligo",
     "test": "tsc && jest ./test/contract.test.js",
+    "update-taquito": "ncu -u --target newest --filter '/^@taquito.*$/' && npm i",
     "compile-contract-to-json": "ligo compile-contract ./contract/main.mligo main > ./test/contract.json --michelson-format=json",
-    "start-flextesa": "docker run --rm --name my-sandbox --detach -p 20000:20000 tqtezos/flextesa:20210602 granabox start"
+    "start-flextesa": "docker run --rm --name my-sandbox --detach -p 20000:20000 tqtezos/flextesa:20210930 hangzbox start"
   },
   "keywords": [
     "Tezos",
@@ -18,9 +19,9 @@
   "author": "Claude Barde",
   "license": "ISC",
   "dependencies": {
-    "@taquito/signer": "^10.1.3",
-    "@taquito/taquito": "^10.1.3",
-    "@taquito/utils": "^10.1.3",
+    "@taquito/signer": "^10.2.1",
+    "@taquito/taquito": "^10.2.1",
+    "@taquito/utils": "^10.2.1",
     "nodemon": "^2.0.12"
   },
   "devDependencies": {
